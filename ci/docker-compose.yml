@@ -1,0 +1,86 @@
+version: "3"
+services:
+  proxy:
+    image: traefik:maroilles
+    restart: always
+    command: --api --docker --web --metrics.prometheus --metrics.prometheus.buckets="0.1,0.3,1.2,5.0" --logLevel=DEBUG
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "traefik.frontend.rule=Host:proxy.192.168.99.100.nip.io"
+      - "traefik.port=8080"
+      - "traefik.frontend.auth.basic=admin:$$2y$$05$$zwDsjPDyxLTZhVkRy5041e2981C3AvDb2sIc5k1i8XtP/yZ8NNWbm"
+  jenkins:
+    build:
+      context: ./jenkins
+      dockerfile: Dockerfile
+    image: flaviait/jenkins:latest
+    depends_on:
+      - proxy
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - jenkins_user_content:/var/jenkins_home/userContent
+      - jenkins_fingerprints:/var/jenkins_home/fingerprints
+      - jenkins_workspace:/var/jenkins_home/workspace
+      - jenkins_jobs:/var/jenkins_home/jobs
+    labels:
+      - "traefik.frontend.rule=Host:jenkins.192.168.99.100.nip.io"
+      - "traefik.port=8080"
+  prometheus:
+    image: prom/prometheus
+    depends_on:
+      - proxy
+    restart: always
+    volumes:
+      - ./conf/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    labels:
+      - "traefik.frontend.rule=Host:prometheus.192.168.99.100.nip.io"
+      - "traefik.port=9090"
+  postgres:
+    image: postgres:11
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./conf/postgres:/docker-entrypoint-initdb.d:ro
+      - postgres_data:/var/lib/postgresql/data/pgdata
+  grafana:
+    image: grafana/grafana:master
+    depends_on:
+      - postgres
+      - proxy
+    restart: always
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_DATABASE_TYPE=postgres
+      - GF_DATABASE_HOST=postgres:5432
+      - GF_DATABASE_NAME=grafana
+      - GF_DATABASE_USER=grafana
+      - GF_DATABASE_PASSWORD=grafana
+      - GF_SECURITY_ADMIN_PASSWORD=default
+    labels:
+      - "traefik.frontend.rule=Host:grafana.192.168.99.100.nip.io"
+      - "traefik.port=3000"
+volumes:
+  jenkins_user_content:
+  jenkins_fingerprints:
+  jenkins_workspace:
+  jenkins_jobs:
+  postgres_data:
+  grafana_data:
+  prometheus_data:
+
+
