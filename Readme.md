@@ -38,3 +38,36 @@ Update vagrant box:
 ```sh
 vagrant box update
 ```
+
+## Traefik
+
+### Generating password for admin UI
+
+``` sh
+echo $(htpasswd -nbB <USER> "<PASS>") | sed -e s/\\$/\\$\\$/g
+```
+
+## Jenkins
+
+## Automatic plugin deployment
+
+If you haven't already a list of the needed plugins, the best way iys to setup a Jenkins, install all needed Plugins and curl the Plugin endpoint.
+
+- Start Jenkins inside docker:
+
+```sh
+docker run --name jenkins -p 8080:8080 jenkins/jenkins:lts-alpine
+```
+
+- Initialize Jenkins manual and install all needed Plugins
+- Get the plugin list via curl and [jq](https://stedolan.github.io/jq/)
+
+```sh
+curl -s -k "http://${jenkins_user}:${jenkins_pwd}@${jenkins_url}:${jenkins_port}/pluginManager/api/json?depth=1" | jq -r '.plugins[].shortName' | tee plugins.txt
+```
+
+## Rebuild image and redeploy
+
+```sh
+docker-compose up -d --no-deps --build jenkins
+```
