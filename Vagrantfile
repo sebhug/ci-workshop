@@ -15,7 +15,7 @@ Vagrant.configure("2") do |config|
     end
   end
 
-  config.vm.define "worker", primary: true do |worker|
+  config.vm.define "worker" do |worker|
 # MacOS and Linux    worker.vm.network "private_network", ip: "192.168.99.101", :name => 'vboxnet0', :adapter => 2
     worker.vm.network "private_network", ip: "192.168.99.101", :name => 'VirtualBox Host-Only Ethernet Adapter', :adapter => 2    worker.vm.provision :shell, path: "bootstrap.sh"
     worker.vm.hostname = "worker"
