@@ -7,6 +7,32 @@ First, make sure your development machine has
 installed. After this,
 [download and install the appropriate Vagrant package for your OS](https://www.vagrantup.com/downloads.html).
 
+### Host only setup for Vagrant VMs
+
+Modify the host only network configuration in the Vagrantfile to match the setup for your host OS.
+
+For Windows:
+
+```yml
+...
+ci.vm.network "private_network", ip: "192.168.99.100", :name => 'VirtualBox Host-Only Ethernet Adapter', :adapter => 2
+...
+worker.vm.network "private_network", ip: "192.168.99.101", :name => 'VirtualBox Host-Only Ethernet Adapter', :adapter => 2
+...
+```
+
+For MacOS and Linux
+
+```yml
+...
+ci.vm.network "private_network", ip: "192.168.99.101", :name => 'vboxnet0', :adapter => 2
+...
+worker.vm.network "private_network", ip: "192.168.99.101", :name => 'vboxnet0', :adapter => 2
+...
+```
+
+If you still have issues with the Host only network, check the device name of your virtualbox host-only network adapter
+
 ### Basic Vagrant commands
 
 Start vagrant machines:
